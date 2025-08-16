@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import { usePuterStore } from "~/lib/puter";
+import Summary from "~/components/Summary";
 import ATS from "~/components/ATS";
 import Details from "~/components/Details";
-import Summary from "~/components/Summary";
-import { usePuterStore } from "~/lib/puter";
 
 export const meta = () => [
-  { title: "Resumind | Review" },
+  { title: "Resumind | Review " },
   { name: "description", content: "Detailed overview of your resume" },
 ];
 
@@ -19,14 +19,14 @@ const Resume = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !auth.isAuthenticated) {
+    if (!isLoading && !auth.isAuthenticated)
       navigate(`/auth?next=/resume/${id}`);
-    }
   }, [isLoading]);
 
   useEffect(() => {
     const loadResume = async () => {
       const resume = await kv.get(`resume:${id}`);
+
       if (!resume) return;
 
       const data = JSON.parse(resume);
@@ -42,12 +42,14 @@ const Resume = () => {
       if (!imageBlob) return;
       const imageUrl = URL.createObjectURL(imageBlob);
       setImageUrl(imageUrl);
+
       setFeedback(data.feedback);
       console.log({ resumeUrl, imageUrl, feedback: data.feedback });
     };
 
     loadResume();
   }, [id]);
+
   return (
     <main className="!pt-0">
       <nav className="resume-nav">
@@ -84,16 +86,11 @@ const Resume = () => {
               <Details feedback={feedback} />
             </div>
           ) : (
-            <img
-              src="/images/resume-scan-2.gif"
-              alt="Resume scan icon"
-              className="w-full"
-            />
+            <img src="/images/resume-scan-2.gif" className="w-full" />
           )}
         </section>
       </div>
     </main>
   );
 };
-
 export default Resume;

@@ -1,11 +1,11 @@
-import { prepareInstructions } from "constants/index";
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router";
-import FileUploader from "~/components/FileUploader";
+import { type FormEvent, useState } from "react";
 import Navbar from "~/components/Navbar";
-import { convertPdfToImage } from "~/lib/pdf2img";
+import FileUploader from "~/components/FileUploader";
 import { usePuterStore } from "~/lib/puter";
+import { useNavigate } from "react-router";
+import { convertPdfToImage } from "~/lib/pdf2img";
 import { generateUUID } from "~/lib/utils";
+import { prepareInstructions } from "../../constants";
 
 const Upload = () => {
   const { auth, isLoading, fs, ai, kv } = usePuterStore();
@@ -30,25 +30,22 @@ const Upload = () => {
     file: File;
   }) => {
     setIsProcessing(true);
-    setStatusText("Uploading the file ...");
-    const uploadedFile = await fs.upload([file]);
 
+    setStatusText("Uploading the file...");
+    const uploadedFile = await fs.upload([file]);
     if (!uploadedFile) return setStatusText("Error: Failed to upload file");
 
-    setStatusText("Converting to image ...");
+    setStatusText("Converting to image...");
     const imageFile = await convertPdfToImage(file);
     if (!imageFile.file)
       return setStatusText("Error: Failed to convert PDF to image");
 
-    setStatusText("Uploading the image ...");
+    setStatusText("Uploading the image...");
     const uploadedImage = await fs.upload([imageFile.file]);
-
     if (!uploadedImage) return setStatusText("Error: Failed to upload image");
 
-    setStatusText("Preparing data ...");
-
+    setStatusText("Preparing data...");
     const uuid = generateUUID();
-
     const data = {
       id: uuid,
       resumePath: uploadedFile.path,
@@ -58,8 +55,9 @@ const Upload = () => {
       jobDescription,
       feedback: "",
     };
-    await kv.set(`resume: ${uuid}`, JSON.stringify(data));
-    setStatusText("Analyzing ...");
+    await kv.set(`resume:${uuid}`, JSON.stringify(data));
+
+    setStatusText("Analyzing...");
 
     const feedback = await ai.feedback(
       uploadedFile.path,
@@ -73,8 +71,8 @@ const Upload = () => {
         : feedback.message.content[0].text;
 
     data.feedback = JSON.parse(feedbackText);
-    await kv.set(`resume: ${uuid}`, JSON.stringify(data));
-    setStatusText("Analysis complete, redirecting ...");
+    await kv.set(`resume:${uuid}`, JSON.stringify(data));
+    setStatusText("Analysis complete, redirecting...");
     console.log(data);
     navigate(`/resume/${uuid}`);
   };
@@ -85,27 +83,26 @@ const Upload = () => {
     if (!form) return;
     const formData = new FormData(form);
 
-    const companyName = formData.get("company-name");
-    const jobTitle = formData.get("job-title");
-    const jobDescription = formData.get("job-description");
+    const companyName = formData.get("company-name") as string;
+    const jobTitle = formData.get("job-title") as string;
+    const jobDescription = formData.get("job-description") as string;
 
     if (!file) return;
+
     handleAnalyze({ companyName, jobTitle, jobDescription, file });
   };
+
   return (
     <main className="bg-[url('/images/bg-main.svg')] bg-cover">
       <Navbar />
+
       <section className="main-section">
         <div className="page-heading py-16">
           <h1>Smart feedback for your dream job</h1>
           {isProcessing ? (
             <>
               <h2>{statusText}</h2>
-              <img
-                src="/images/resume-scan.gif"
-                alt="scan"
-                className="w-full"
-              />
+              <img src="/images/resume-scan.gif" className="w-full" />
             </>
           ) : (
             <h2>Drop your resume for an ATS score and improvement tips</h2>
@@ -143,6 +140,7 @@ const Upload = () => {
                   id="job-description"
                 />
               </div>
+
               <div className="form-div">
                 <label htmlFor="uploader">Upload Resume</label>
                 <FileUploader onFileSelect={handleFileSelect} />
@@ -158,5 +156,4 @@ const Upload = () => {
     </main>
   );
 };
-
 export default Upload;
